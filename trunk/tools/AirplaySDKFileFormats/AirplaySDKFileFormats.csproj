@@ -1,0 +1,99 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{BA52206A-6C08-4E21-8327-6E6CE2AD9076}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>AirplaySDKFileFormats</RootNamespace>
+    <AssemblyName>AirplaySDKFileFormats</AssemblyName>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AirplaySDKMath.cs" />
+    <Compile Include="Cb4aCollisionConvexBrush.cs" />
+    <Compile Include="Cb4aCollisionMeshSoup.cs" />
+    <Compile Include="Cb4aEntity.cs" />
+    <Compile Include="Cb4aLeaf.cs" />
+    <Compile Include="Cb4aLevel.cs" />
+    <Compile Include="Cb4aLevelVertexBuffer.cs" />
+    <Compile Include="Cb4aNode.cs" />
+    <Compile Include="Cb4aTreeElement.cs" />
+    <Compile Include="CIwAnim.cs" />
+    <Compile Include="CIwAnimBone.cs" />
+    <Compile Include="CIwAnimKeyFrame.cs" />
+    <Compile Include="CIwAnimKeyFrameBone.cs" />
+    <Compile Include="CIwAnimSkel.cs" />
+    <Compile Include="CIwAnimSkin.cs" />
+    <Compile Include="CIwAnimSkinSet.cs" />
+    <Compile Include="CIwAnimSkinSetKey.cs" />
+    <Compile Include="CIwAnimSkinSetVertWeights.cs" />
+    <Compile Include="CIwColour.cs" />
+    <Compile Include="CIwManaged.cs" />
+    <Compile Include="CIwManagedList.cs" />
+    <Compile Include="CIwMaterial.cs" />
+    <Compile Include="CIwModel.cs" />
+    <Compile Include="CIwModelBlock.cs" />
+    <Compile Include="CIwParseable.cs" />
+    <Compile Include="CIwPlane.cs" />
+    <Compile Include="CIwQuat.cs" />
+    <Compile Include="CIwResGroup.cs" />
+    <Compile Include="CIwResource.cs" />
+    <Compile Include="CIwTextParserITX.cs" />
+    <Compile Include="CIwTexture.cs" />
+    <Compile Include="CIwVec2.cs" />
+    <Compile Include="CIwVec3.cs" />
+    <Compile Include="CTextWriter.cs" />
+    <Compile Include="Model\Cb4aLevelMaterial.cs" />
+    <Compile Include="Model\Cb4aLevelVBCluster.cs" />
+    <Compile Include="Model\Cb4aLevelVBSubcluster.cs" />
+    <Compile Include="Model\CMesh.cs" />
+    <Compile Include="Model\CSurface.cs" />
+    <Compile Include="Model\CTris.cs" />
+    <Compile Include="Model\CTrisElement.cs" />
+    <Compile Include="Model\CUVs.cs" />
+    <Compile Include="Model\CVertCols.cs" />
+    <Compile Include="Model\CVertNorms.cs" />
+    <Compile Include="Model\CVerts.cs" />
+    <Compile Include="Model\EdgeConnectionsComparer.cs" />
+    <Compile Include="Model\LevelVBItem.cs" />
+    <Compile Include="Model\LevelVBWriter.cs" />
+    <Compile Include="Model\ModelWriter.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

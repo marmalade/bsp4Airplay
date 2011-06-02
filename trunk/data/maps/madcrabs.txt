@@ -1,0 +1,47 @@
+
+
+           MadCrabs
+
+
+Single Player Mod for Half-Life, by Gaddy
+
+Translated by Caroline GADENNE
+
+www.MadCrabs.fr.st
+
+------ Installation ------
+Only unzip the Madcrabs.zip file in your half-life folder, start Half-Life and activate Madcrabs by choosing in the menu “personalised game”
+
+------ The beginning of the SCENARIO ------
+You’ve just been hired on board of The Nostromo, a goods transport ship. It’s a lovely day. However, the dicovery of a mysterious emergency capsule drifting away in the space will change it all… 
+
+------ A few tips ------
+Start off by going through the training test which actually is a job application one; it is part of the scenario. Don’t start flat out like a nag, take your time to enjoy the surroundings. 
+In this mod, the headcrabs are the main Aliens’ representatives. They are slightly brawnier than in Half-Life… They particularly infect the people they meet in order to control them and increase their own resistance. Good luck…    
+
+------ Already finished ? ------
+Well, you might say that was a bit quick. Well, that's not my fault : I did it on my own, I'm still a student and I took part in other projects at the same tims. But well, if you don't know what to do next, you can always : 
+-find out the 4 different endings (homage to the wonderful game 'Deus Ex')
+-find out the 10 Joystick (french) magazines lost in the ship ;
+-find out the mega-crowbar (I won't give you any clue...);
+-start it all again at the difficult level (goog luck)
+
+------ Thanx ------
+I must say I've got to thank a few guys who helped me :
+-Music : Xom
+-Translation : Caroline Gadenne
+-Testers : Xom, Max Katarn, Minifrag, Lichen, Alex
+And I don't forget all the www.halflifedesign.net mods developers community and, of course, Valve, Sierra and all those who participed in the creation of Half-Life
+
+------ To contact me ------
+If you've got remarks, stuff to tell me or cheques to send me, - one never knows :o) - write me to : nicolasgadenne@hotmail.com
+MadCrabs's Site : www.madcrabs.fr.st (in french)
+My other site with the rest of my creation : www.madcrabs.fr.st (in french)
+
+     Gaddy
+___________________________
+Created with the Half-Life 1.1.0.8. version
+MadCrabs, Single Player Mod for Half-Life
+July 2001-January 2002
+
+

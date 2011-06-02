@@ -1,0 +1,56 @@
+SGQ - April 2004
+================================================================
+Title                   : SGQ
+Filename          - Skill set level	: intro.bsp
+		  - Actual level	: sgq01.bsp
+		  - Readme		: readme.txt
+                          
+Author                  : Ben Horsley
+Email Address           : dark_widow86@hotmail.com
+Web Page		: 
+Description             : Base style single player level
+================================================================
+
+* Play Information *
+
+Single Player           : Yes
+Cooperative             : No
+Deathmatch              : No
+Difficulty Settings     : Yes
+New Sounds              : Yes 
+New Graphics            : Yes  (2)Quake 2
+New Music               : no
+Demos Supplied          : no
+
+* Construction *
+
+Base                    : new level from scratch
+Editor(s) used          : Quark
+Known Bugs              : sometime get hurt on the Gold key door
+Build Time              : ???
+
+
+Compile machine         : P133, 32m ram
+treeQbsp Time           : 87 seconds
+Arghlite (-extra) Time  : 309 seconds
+RVIS (full) Time        : 111 seconds
+
+Weapons			: axe, shotgun, supershotgun, nailgun, supernailgun
+
+Monsters		: Grunts, Enforcers, ogers(easy), feind(normal), shambler(hard)
+
+Summary of the level
+====================
+
+Base style level.  Bassed on the TV show Stargate SG1 in the "SCG".
+
+Background
+==========
+
+You are a rogue Soldier that has broken into the SCG desprately trying to
+get to the Stargate for unknown reasons, inevitably setting off the Weapons
+alarm system therefore making you the enemy to the entire base.
+
+
+
+

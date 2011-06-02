@@ -1,0 +1,883 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+<title>The Source Engine BSP File Format</title>
+<STYLE TYPE="text/css">
+<!--
+  P { width: 90%; font-family: Georgia, serif; }
+  H1 { text-align: center; font-family: sans-serif; }
+  H3 { background-color: #E0E0C0; text-indent: 15px; font-weight: normal; font-family: sans-serif; }
+  CODE { font-size: 120%; color: #602020; }
+  PRE { font-size: 100%; color: #602020; background-color: #D0D0A0; }
+-->
+</STYLE>
+
+</head>
+<body bgcolor="#CCCC99" link="#3333FF" vlink="#666633" text="#000000">
+<h1>The Source Engine BSP File Format</h1>
+<h4>The map format of Half-Life 2,
+Counter-Strike:Source, and other Source engine mods and games.</h4>
+<p>by Rof (<i>rof</i>(<i>at</i>)<i>bagthorpe.org</i>) October 2005
+<hr>
+<a name="intro"></a>
+<h3>Introduction</h3>
+
+<p>This document describes the structure of the BSP file format used by Half-Life 2, and other Source engine games. The format is similar but not identical to the BSP file formats of the Half-Life 1 engine, which is in turn based on the Quake 1 and Quake 2 file formats, plus that of the later Quake 3:Arena. Because of this, Max McGuire's article,  "Quake 2 BSP File Format" (<a href="http://flipcode.com/articles/article_q2bsp.shtml">http://flipcode.com/articles/article_q2bsp.shtml</a>) has been of invaluable help in understanding the overall structure of the format and the parts of it that have remained the same or similar to its predecessors.
+
+<p>This document is an extension of notes made during the writing of my Half-Life 2 bsp file decompiler, VMEX (<a href="http://www.geocities.com/cofrdrbob/">http://www.geocities.com/cofrdrbob/</a>). It therefore focusses on those parts of the format necessary to perform map decompilation (conversion of the bsp file back into a vmf file which can be loaded by the Hammer map editor). Some parts of the format are not needed for this process, but what information I have about these sections will be mentioned.
+
+<p>Most of the information in this document comes from the Max McGuire article referenced above, from the source code included in the Source SDK (particularly the C++ header file <i>public/bspfile.h</i>), and from my own experimentation during the writing of VMEX. This document is completely unofficial and should not be considered any kind of official specification from Valve, nor am I affiliated with Valve in any way. Any corrections or information on the unknown parts of the format will be gratefully received.
+
+<p>This document describes version 19 of the BSP file format as used by the Source engine, which is used by Half-Life 2 single player (HL2SP), Half-Life 2 Deathmatch (HL2DM), and Counter-Strike:Source (CS:S). The game Vampire: The Masquerade  Bloodlines (VTMB) uses a modified form of an earlier format, version 17; known differences will be mentioned in their respective sections, however because no SDK is available for VTMB, this information is mostly guesswork. 
+
+<p>Preliminary information on version 20 of the format, which supports high dynamic range (HDR) lighting as used in Day of Defeat: Source (DoD:S), is tentatively covered. Until the Source SDK is updated, this information is also mostly guesswork.
+
+<p>A certain familiarity with C/C++, geometry, and HL2 mapping terms is assumed on the part of the reader. Code (mostly C structures) is given in a <code>fixed width font</code>. Sometimes the structures as shown are modified from their actual definitions in the SDK header files, for reasons of clarity and consistency.
+
+<a name="overview"></a>
+<h3>Overview</h3>
+
+<p>The BSP file contains the vast majority of the information needed by the Source engine to render and play a map. This includes the geometry of all the polygons in the level; references to the names and orientation of the textures to be drawn on those polygons; the data used to simulate the physical behaviour of the player and other items during the game; the location and properties of all brush-based, model (prop) based, and non-visible (logical) entities in the map; and the BSP tree and visibility table used to locate the player location in the map geometry and to render the visible map as efficiently as possible. Optionally, the map file can also contain any custom textures and models used on the level, embedded inside the map's Pakfile lump (see below).
+
+<p>Information not stored in the BSP file includes the map description text displayed by HL2DM and CS:S after loading the map (stored in the file <i>mapname</i>.txt) and the AI navigation file used by non-player characters (NPCs) which need to navigate the map (stored in the file <i>mapname</i>.nav). Because of the way the Source engine file system works, these external files may also be embedded in the bsp file's Pakfile lump, though usually they are not.
+
+<p>Official map files are stored in the Steam Game Cache File (GCF) format, and are accessed through the Steam filesystem by the game engine. They can be extracted from the GCF files using Nemesis' GCF Scape program (<a href="http://nemesis.thewavelength.net">http://nemesis.thewavelength.net</a>) for perusal outside of Steam.
+
+<p>The data in the BSP file is stored throughout in little-endian byte format, in common with the preceding BSP formats as used by HL1, Quake, etc. Byte-swabbing is required if loading the file on a big-endian format platform such as Java.
+
+<a name="header"></a>
+<h3>BSP File Header</h3>
+
+<p>The BSP file starts with a header. This structure identifies the file as a Valve Source Engine BSP file, identifies the version of the format, and is then followed by a directory listing of the location, length, and version of up to 64 subsections of the file, known as <i>lumps</i>, that store different parts of the map data. Finally, the map revision is given. 
+
+<p>The structure of the header is given in the SDK's <i>public/bspfile.h</i> header file, a file which I will be referencing extensively throughout this document. The header is 1036 bytes long in total: 
+
+<pre>
+struct dheader_t
+{
+      int         ident;            // BSP file identifier
+      int         version;          // BSP file version
+      lump_t      lumps[HEADER_LUMPS];    // lump directory array
+      int         mapRevision;      // the map's revision (iteration, version) number 
+};
+</pre>
+
+<p>Here <code>ident</code> is a 4-byte magic number defined as:
+<pre>
+IDBSPHEADER       (('P'&lt;&lt;24)+('S'&lt;&lt;16)+('B'&lt;&lt;8)+'V')    //little-endian 'VBSP';
+</pre>
+
+<p>The first four bytes of the file are thus always 'V' 'B' 'S' 'P' (in ASCII). These bytes identify the file as a Valve BSP file; other BSP file formats use a different magic number (such as for iD Software's Quake engine games, which start with 'IBSP'). The HL1 BSP format does not use any magic number at all.
+
+<p>The second integer is the version of the BSP file format (BSPVERSION); for HL2 games (until the release of HDR lighting) this was 19 (decimal); VTMB uses an earlier version of the format, 17. Note that BSP file formats for other engines (HL1, Quake series, etc.) use entirely different version number ranges.
+
+<p>The newest Valve BSP version is 20, for maps supporting HDR lighting. This is currently only used in maps for DoD:S and The Lost Coast, but presumably all forthcoming maps for the Source engine will use this version number.
+
+<p>Then follows an array of 16-byte <code>lump_t</code> structures. HEADER_LUMPS is defined as 64, so there are 64 entries, however only 52 of these lumps are currently used, the rest being undefined.
+
+<p>Each <code>lump_t</code> is defined in <i>bspfile.h</i>:
+
+<pre>
+struct lump_t
+{
+	int   fileofs;          // offset into file (bytes)
+	int   filelen;          // length of lump(bytes)
+	int   version;          // lump format version
+	char  fourCC[4];        // lump ident code
+};
+</pre>
+
+<p>The first two integers contain the byte offset (from the beginning of the bsp file) and byte length of that lump's data block; an integer defining the version number of the format of that lump (usually zero), and then a four byte identifier that is in practice always 0, 0, 0, 0. Unused members of the lump_t array (those that have no data to point to) have all elements set to zero.
+
+<p>Lump offsets (and their corresponding data lumps) are always rounded up to the nearest 4-byte boundary, though the lump length may not be.
+
+<p>The type of data pointed to by the <code>lump_t</code> array is defined by its position in the array; for example, the first lump in the array (Lump 0) is always the BSP file's entity data (see below). The actual location of the data in the BSP file is defined by the offset and length entries for that lump, and does not need to be in any particular order in the file; for example, the entity data is usually stored towards the end of the BSP file despite being first in the lump array. The array of lump_t headers is therefore a directory of the actual lump data, which may be located anywhere else in the file.
+
+<p>The order of the lumps in the array is defined as (lumps with unknown or uncertain purpose are marked with (?)):
+<pre>
+Lump:       Name:                   Purpose:
+0           Entities                Map entities
+1           Planes                  Plane array
+2           Texdata                 Index to texture names
+3           Vertexes                Vertex array
+4           Visibility              Compressed visibility bit arrays
+5           Nodes                   BSP tree nodes  
+6           Texinfo                 Face texture array
+7           Faces                   Face array
+8           Lighting                Lightmap samples
+9           Occlusion               Occlusion data(?)
+10          Leafs                   BSP tree leaf nodes
+11          Unused
+12          Edges                   Edge array
+13          Surfedges               Index of edges
+14          Models                  Brush models (geometry of brush entities)
+15          Worldlights             Light entities
+16          LeafFaces               Index to faces in each leaf
+17          LeafBrushes             Index to brushes in each leaf
+18          Brushes                 Brush array
+19          Brushsides              Brushside array
+20          Areas                   Area array
+21          AreaPortals             Portals between areas
+22          Portals                 Polygons defining the boundary between adjacent leaves(?)
+23          Clusters                Leaves that are enterable by the player
+24          PortalVerts             Vertices of portal polygons
+25          Clusterportals          Polygons defining the boundary between adjacent clusters(?)
+26          Dispinfo                Displacement surface array
+27          OriginalFaces           Brush faces array before BSP splitting
+28          Unused
+29          PhysCollide             Physics collision data(?)
+30          VertNormals             Vertex normals(?)
+31          VertNormalIndices       Vertex normal index array(?)
+32          DispLightmapAlphas      Displacement lightmap data(?)
+33          DispVerts               Vertices of displacement surface meshes
+34          DispLightmapSamplePos   Displacement lightmap data(?)
+35          GameLump                Game-specific data lump
+36          LeafWaterData           (?)
+37          Primitives              Non-polygonal primatives(?)
+38          PrimVerts               (?)
+39          PrimIndices             (?)
+40          Pakfile                 Embedded uncompressed-Zip format file
+41          ClipPortalVerts         (?)
+42          Cubemaps                Env_cubemap location array
+43          TexdataStringData       Texture name data
+44          TexdataStringTable      Index array into texdata string data
+45          Overlays                Info_overlay array       
+46          LeafMinDistToWater      (?)
+47          FaceMacroTextureInfo    (?)
+48          DispTris                Displacement surface triangles
+49          PhysCollideSurface      Physics collision surface data(?)
+50-52       Unused
+53          LightingHDR             HDR related lighting data(?)
+54          WorldlightsHDR          HDR related worldlight data(?)
+55          LeaflightHDR1           HDR related leaf lighting data(?)
+56          LeaflightHDR2           HDR related leaf lighting data(?)
+57-63       Unused
+</pre>
+
+<p>Lumps 53-56 are only used in version 20 BSP files; the lump names are unofficial and currently only guesses can be made about their content.
+
+<p>The structure of the data lumps for the known entries is described below. Many of the lumps are simple arrays of structures; however some are of variable length depending on their content. The maximum size or number of entries in each lump is also defined in the <i>bspfile.h</i> file, as MAX_MAP_*.
+
+<p>Finally, the header ends with an integer containing the map revision number. This number is based on the revision number of the map's vmf file, which seems to increase each time the map is saved in the Hammer editor.
+
+<p>Immediately following the header is the first data lump. This can be any lump in the preceding list (pointed to using the offset field of that lump), though in practice the first data lump is Lump 1, the plane data array.
+
+<a name="plane"></a>
+<h3>Plane Lump</h3>
+
+<p>The basis of the BSP geometry is defined by planes, which are used as splitting surfaces across the BSP tree structure.
+
+<p>The plane lump (1) is an array of <code>dplane_t</code> structures:
+
+<pre>
+struct dplane_t
+{
+      Vector      normal;     // normal vector
+      float       dist;       // distance from origin
+      int         type;       // plane axis identifier
+};
+</pre>
+<p>where the Vector type is a 3-vector defined as:
+
+<pre>
+struct Vector
+{
+      float x;
+      float y;
+      float z;
+};
+</pre>
+
+<p>Floats are 4 bytes long; there are thus 20 bytes per plane, and the plane lump should be a multiple of 20 bytes long.
+
+<p>The plane is represented by the element <code>normal</code>, a normal vector, which is a unit vector (length 1.0) perpendicular to the plane's surface. The position of the plane is given by <code>dist</code>, which is the distance from the map origin (0,0,0) to the nearest point on the plane.
+
+<p>Mathematically, the plane is described by the set of points (<i>x, y, z</i>) in
+the equation:
+
+<p>            <i>F</i>(<i>x,y,z</i>) = A<i>x</i> + B<i>y</i> + C<i>z</i> + D
+
+<p>where A, B, and C are given by the components <code>normal.x</code>, <code>normal.y</code> and <code>normal.z</code>, and D is <code>dist</code>. Each plane is infinite in extent, and divides the whole of the map coordinate volume into three pieces, on the plane (F=0), in front of the plane (F&gt;0), and behind the plane (F&lt;0).
+
+<p>Note that planes have a particular orientation, corresponding to which side is considered "in front" of the plane, and which is "behind". The orientation of a plane can be flipped by negating the A, B, C, and D components.
+
+<p>The <code>type</code> member of the structure seems to contain flags that indicate planes that are perpendicular to coordinates axes, but is usually not used.
+
+<p>The can be up to 65536 planes in a map (MAX_MAP_PLANES).
+
+<a name="vertex"></a>
+<h3>Vertex Lump</h3>
+
+<p>The vertex lump (3) is an array of coordinates of all the vertices (corners) of brushes in the map geometry. Each vertex is a <code>Vector</code> of 3 floats (x, y, and z), giving 12 bytes per vertex.
+
+<p>Note that vertices can be shared between faces, if the vertices coincide exactly.
+
+<p>There are a maximum of 65536 vertices in a map (MAX_MAP_VERTS).
+
+<a name="edge"></a>
+<h3>Edge Lump</h3>
+
+<p>The edge lump (12) is an array of <code>dedge_t</code> structures:
+
+<pre>
+struct dedge_t
+{
+      unsigned short    v[2];       // vertex indices
+};
+</pre>
+<p>Each edge is simply a pair of vertex indices (which index into the vertex lump array). The edge is defined as the straight line between the two vertices. Usually, the edge array is referenced through the Surfedge array (see below).
+
+<p>As for vertices, edges can be shared between adjacent faces. There is a limit of 256000 edges in a map (MAX_MAP_EDGES).
+
+<a name="surfedge"></a>
+<h3>Surfedge Lump</h3>
+
+<p>The Surfedge lump (13), presumable short for surface edge, is an array of (signed) integers. Surfedges are used to reference the edge array, in a somewhat complex way. The value in the surfedge array can be positive or negative. The absolute value of this number is an index into the edge array: if positive, it means the edge is defined from the first to the second vertex; if negative, from the second to the first vertex.
+
+<p>By this method, the Surfedge array allows edges to be referenced for a particular direction. (See the face lump entry below for more on why this is done).
+
+<p>There is a limit of 512000 (MAX_MAP_SURFEDGES) surfedges per map. Note that the number of surfedges is not necessarily the same as the number of edges in the map.
+
+<a name="face"></a>
+<h3>Face and Original Face Lumps</h3>
+
+<p>The face lump (7) contains the major geometry of the map, used by the game engine to render the viewpoint of the player. The face lump contains faces after they have undergone the BSP splitting process; they therefore do not directly correspond to the faces of brushes created in Hammer. Faces are always flat, convex polygons, though they can contain edges that are co-linear.
+
+<p>The face lump is one of the more complex structures of the map file. It is an array of  <code>dface_t</code> entries, each 56 bytes long:
+
+<pre>
+struct dface_t
+{
+	unsigned short    planenum;		// the plane number
+	byte        side;			// faces opposite to the node's plane direction
+	byte        onNode; 			// 1 of on node, 0 if in leaf
+	int         firstedge;			// index into surfedges	
+	short       numedges;			// number of surfedges
+	short       texinfo;			// texture info
+	short       dispinfo;			// displacement info
+	short       surfaceFogVolumeID;		// ?	
+	byte        styles[4];			// switchable lighting info
+	int         lightofs;			// offset into lightmap lump
+	float       area;				// face area in units^2
+	int         LightmapTextureMinsInLuxels[2];   // texture lighting info
+	int         LightmapTextureSizeInLuxels[2];   // texture lighting info
+	int         origFace;			// original face this was split from
+	unsigned short    numPrims;		// primitives
+	unsigned short    firstPrimID; 
+	unsigned int      smoothingGroups;	// lightmap smoothing group
+};
+</pre>
+
+<p>The first member <code>planenum </code> is the plane number, i.e., the index into the plane array that corresponds to the plane that is aligned with this face in the world. <code>Side</code> is zero if this plane faces in the same direction as the face (i.e. "out" of the face) or non-zero otherwise. 
+
+<p><code>Firstedge</code> is an index into the Surfedge array; this and the following <code>numedges</code> entries in the surfedge array define the edges of the face. As mentioned above, whether the value in the surfedge array is positive or negative indicates whether the corresponding pair of vertices listed in the Edge array should be traced from the first vertex to the second, or vice versa. The vertices which make up the face are thus referenced in clockwise order; when looking towards the face, each edge is traced in a clockwise direction. This makes rendering the faces easier, and allows quick culling of faces that face away from the viewpoint.
+
+<p><code>Texinfo</code> is an index into the Texinfo array (see below), and represents the texture to be drawn on the face. <code>Dispinfo</code> is an index into the Dispinfo array is the face is a displacement surface (in which case, the face defines the boundaries of the surface); otherwise, it is -1. <code>SurfaceFogVolumeID</code> appears to be related to drawing fogging when the player's viewpoint is underwater or looking through water. 
+
+<p><code>OrigFace</code> is the index of the original face which was split to produce this face. <code>NumPrims</code> and <code>firstPrimID</code> are related to the drawing of "Non-polygonal primitives" (see below). The other members of the structure are used to reference face-lighting info (see the Lighting lump, below).
+
+<p>The face array is limited to 65536 (MAX_MAP_FACES) entries.
+
+<p>The original face lump (27) has the same structure as the face lump, but contains the array of faces before the BSP splitting process is done. These faces are therefore closer to the original brush faces present in the precompile map than the face array, and there are less of them. The <code>origFace</code> entry for all original faces is zero. The maximum size of the original face array is also 65536 entries.
+
+<p>Both the face and original face arrays are culled; that is, many faces present before compilation of the map (primarily those that face towards the "void" outside the map) are remove from the array. 
+
+<p>Version 17 BSP files contain a substantially modified <code>dface_t</code> structure. The known elements are: 
+
+<pre>
+struct dface_bsp17_t
+{
+	byte        unknown[32];
+	unsigned short    planenum;
+	byte        side;
+	byte        onNode;
+	int         firstedge;
+	short       numedges;
+	short       texinfo;
+	short       dispinfo;
+	byte        unknown[50];      
+	int         origFace;
+	unsigned int	smoothingGroups;
+};
+</pre>
+
+<p>The extra data seems to be related to lighting of the face, and makes the length of the structure 104 bytes per face. Both the face lump and the original face lump in version 17 files use this structure. 
+
+<a name="brush"></a>
+<h3>Brush and Brushside Lumps</h3>
+
+<p>The brush lump (18) contains all brushes that were present in the original vmf file before compiling. (It is the presence of the brush and brushside lumps in HL2 bsp files that makes decompiling them a much easier job than for HL1 files, which lacked this info). The lump is an array of 12-byte <code>dbrush_t</code> structures:
+
+<pre>
+struct dbrush_t
+{
+	int         firstside;        // first brushside
+	int         numsides;         // number of brushsides
+	int         contents;         // contents flags
+};
+</pre>
+
+<p>The first integer <code>firstside </code>is an index into the brushside array lump, this and the following <code>numsides</code> brushsides make up all the sides in this brush. The <code>contents</code> entry contains bitflags which determine the contents of this brush. The values are binary-ORed together, and are defined in the <i>public/bspflags.h</i> file:
+
+<pre>
+CONTENTS_EMPTY          0           // No contents
+CONTENTS_SOLID          0x1         // an eye is never valid in a solid
+CONTENTS_WINDOW         0x2         // translucent, but not watery (glass)
+CONTENTS_AUX            0x4
+CONTENTS_GRATE          0x8         // alpha-tested "grate" textures.  Bullets/sight pass through, but solids don't
+CONTENTS_SLIME          0x10
+CONTENTS_WATER          0x20
+CONTENTS_MIST           0x40
+CONTENTS_OPAQUE         0x80  	// things that cannot be seen through (may be non-solid though)
+CONTENTS_TESTFOGVOLUME  0x100   // can see into a fogvolume (water)
+CONTENTS_MOVEABLE       0x4000
+CONTENTS_AREAPORTAL     0x8000
+CONTENTS_PLAYERCLIP     0x10000
+CONTENTS_MONSTERCLIP    0x20000
+CONTENTS_CURRENT_0      0x40000
+CONTENTS_CURRENT_90     0x80000
+CONTENTS_CURRENT_180    0x100000
+CONTENTS_CURRENT_270    0x200000
+CONTENTS_CURRENT_UP     0x400000
+CONTENTS_CURRENT_DOWN   0x800000
+CONTENTS_ORIGIN         0x1000000   // removed before bsping an entity
+CONTENTS_MONSTER        0x2000000   // should never be on a brush, only in game
+CONTENTS_DEBRIS         0x4000000
+CONTENTS_DETAIL         0x8000000   // brushes to be added after vis leafs
+CONTENTS_TRANSLUCENT    0x10000000  // auto set if any surface has trans
+CONTENTS_LADDER         0x20000000
+CONTENTS_HITBOX         0x40000000  // use accurate hitboxes on trace
+</pre>
+
+<p>Some of these flags seem to be inherited from previous game engines and are not used in Source maps. They are also used to describe to contents of the map's leaves (see below). The CONTENTS_DETAIL flag is used to mark brushes that were in func_detail entities before compiling.
+
+<p>The brush array is limited to 8192 entries (MAX_MAP_BRUSHES).
+
+<a name="brushside"></a>
+<p>The brushside lump (19) is an array of 8-byte structures:
+
+<pre>
+struct dbrushside_t
+{
+	unsigned short    planenum;   // facing out of the leaf
+	short       texinfo;          // texture info
+	short       dispinfo;         // displacement info
+	short       bevel;            // is the side a bevel plane?
+};
+</pre>
+
+<p><code>Planenum</code> is an index info the plane array, giving the plane corresponding to this brushside. <code>Texinfo</code> and <code>dispinfo</code> are references into the texture and displacement info lumps. <code>Bevel</code> is zero for normal brush sides, but 1 if the side is a bevel plane (which seem to be used for collison detection).
+
+<p>Unlike the face array, brushsides are not culled (removed) where they touch the void. Void-facing sides do however have their texinfo entry changed to that of a NODRAW texture during the compile process. Note there is no direct way of linking brushes and brushsides and the corresponding face array entries which are used to render that brush.
+
+<p>The maximum number of brushsides is 65536 (MAX_MAP_BRUSHSIDES). The maximum number of brushsides on a single brush is 128 (MAX_BRUSH_SIDES).
+
+<a name="node"></a>
+<h3>Node and Leaf Lumps</h3>
+
+<p>The node array (lump 5) and leaf array (lump 10) define the Binary Space Partition (BSP) tree structure of the map. The BSP tree is used by the engine to quickly determine the location of the player's viewpoint with respect to the map geometry, and along with the visibility information (see below), to decide which parts of the map are to be drawn.
+
+<p>The nodes and leaves form a tree structure. Each leaf represents a defined volume of the map, and each node represents the volume which is the sum of all its child nodes and leaves further down the tree.
+
+<p>Each node has exactly two children, which can be either another node or a leaf. A child node has two further children, and so on until all branches of the tree are terminated with leaves, which have no children. Each node also references a plane in the plane array. When determining the player's viewpoint, the engine is trying to find which leaf the viewpoint falls inside. It first compares the coordinates of the point with the plane referenced in the headnode (Node 0). If the point is in front of the plane, it then moves to the first child of the node; otherwise, it moves to the second child. If the child is a leaf, then it has completed its task. If it is another node, it then performs the same check against the plane referenced in this node, and follows the children as before. It therefore traverses the BSP tree until it finds which leaf the viewpoint lies in. The leaves, then, completely divide up the map volume into a set of non-overlapping, convex volumes defined by the planes of their parent nodes.
+
+<p>For more information on how the BSP tree is constructed, see the article "BSP for dummies" (<a href="http://www.planetquake.com/qxx/bsp/">http://www.planetquake.com/qxx/bsp/</a>).
+
+<p>The node array consists of 32-byte structures:
+
+<pre>
+struct dnode_t
+{
+	int         planenum;         // index into plane array
+	int         children[2];      // negative numbers are -(leafs+1), not nodes
+	short       mins[3];          // for frustom culling
+	short       maxs[3];
+	unsigned short    firstface;  // index into face array
+	unsigned short    numfaces;   // counting both sides
+	short       area;             // If all leaves below this node are in the same area, then
+					// this is the area index. If not, this is -1.
+	short	paddding;		// pad to 32 bytes length
+};
+</pre>
+
+<p><code>Planenum</code> is the entry in the plane array. The <code>children[]</code> members are the two children of this node; if positive, they are node indices; if negative, the value (-1-<i>child</i>) is the index into the leaf array (e.g., the value -100 would reference leaf 99).
+
+<p>The members <code>mins[]</code> and <code>maxs[]</code> are coordinates of a rough bounding box surrounding the contents of this node. The <code>firstface</code> and <code>numfaces</code> are indices into the face array that show which map faces are contained in this node, or zero if none are. The <code>area</code> value is the map area of this node (see below). 
+There can be a maximum of 65536 nodes in a map (MAX_MAP_NODES).
+
+<a name="leaf"></a>
+<p>The leaf array is an array with 56 bytes per element:
+
+<pre>
+struct dleaf_t
+{
+	int               contents;               // OR of all brushes (not needed?)
+	short             cluster;                // cluster this leaf is in
+	short             area:9;                 // area this leaf is in
+	short             flags:7;                // flags
+	short             mins[3];                // for frustum culling
+	short             maxs[3];
+	unsigned short    firstleafface;          // index into leaffaces
+	unsigned short    numleaffaces;
+	unsigned short    firstleafbrush;         // index into leafbrushes
+	unsigned short    numleafbrushes;
+	short             leafWaterDataID;        // -1 for not in water
+	CompressedLightCube     ambientLighting;  // Precaculated light info for entities.
+	short             padding;                // padding to 4-byte boundary
+};
+</pre>
+
+<p>The leaf structure has similar contents to the node structure, except it has no children and no reference plane. Additional entries are the <code>contents</code> flags (see the brush lump, above), which shows the contents of any brushes in the leaf, and the <code>cluster</code> number of the leaf (see below). The <code>area</code> and <code>flags</code> members share a 16-bit bitfield and contain the area number and flags relating to the leaf. <code>Firstleafface</code> and <code>numleaffaces</code> index into the leafface array and show which faces are inside this leaf, if any. <code>Firstleafbrush</code> and <code>numleafbrushes</code> likewise index brushes inside this leaf through the leafbrush array.
+
+<p>The <code>ambientLighting</code> element is related to lighting of objects in the leaf, and consists of a CompressedLightCube structure, which is 24 bytes in length. Version 17 BSP files have a modified dleaf_t structure that omits the ambient lighting data, making the entry for each leaf only 32 bytes in length. The same shortened structure is also used for version 20 BSP files, with the ambient lighting information for LDR and HDR probably contained in the new lumps 55 and 56.
+
+<p>All leaves are convex polyhedra, and are defined by the planes of their parent nodes. They do not overlap. Any point in the coordinate space is in one and only one leaf of the map. A leaf which is not filled with a solid brush and can be entered by the player in the usual course of the game has a cluster number set; this is used in conjunction with the visibility information (below).
+
+<p>There are usually multiple, unconnected BSP trees in a map. Each one corresponds to an entry in model array (see below) and the headnode of each tree is referenced there. The first tree is the worldspawn model, the overall geometry of the level. Successive trees are the models of each brush entity in the map.
+
+<p>The creation of the BSP tree is done by the VBSP program, during the first phase of map compilation. Exactly how the tree is created, and how the map is divided into leaves, can be influenced by the map author by the use of HINT brushes, func_details, and the careful layout of all brushes in the map.
+
+<h3>LeafFace and LeafBrush Lumps</h3><a name="leafface"></a>
+
+<p>The leafface lump (16) is an array of shorts which are used to map from faces referenced in the leaf structure to indices in the face array. The leafbrush lump (17) does the same thing for brushes referenced in leaves. Their maximum sizes are both 65536 entries (MAX_MAP_LEAFFACES, MAX_MAP_LEAFBRUSHES).
+
+<a name="texinfo"></a>
+<h3>Texinfo, Texdata, TexdataStringData and TexdataStringTable Lumps</h3>
+
+<p>The texture information in a map is split across a number of different lumps. The Texinfo lump is the most fundamental, referenced by the face and brushside arrays, and it in turn references the other texture lumps.
+
+<p>The texinfo lump (6) contains an array of <code>texinfo_t</code> structures:
+
+<pre>
+struct texinfo_t
+{
+	float       textureVecs[2][4];      // [s/t][xyz offset]
+	float       lightmapVecs[2][4];     // [s/t][xyz offset] - length is in units of texels/area
+	int         flags;                  // miptex flags + overrides
+	int         texdata;                // Pointer to texture name, size, etc.
+}
+</pre>
+
+<p>Each texinfo is 72 bytes long.
+
+<p>The first array of floats is in essence two vectors that represent how the texture is orientated and scaled when rendered on the world geometry. The two vectors, <b>s</b> and <b>t</b>, are the mapping of the left-to-right and down-to-up directions in the texture pixel coordinate space, onto the world. Each vector has an x, y, and z component, plus an offset which is the "shift" of the texture in that direction relative to the world. The length of the vectors represent the scaling of the texture in each direction.
+
+<p>The 2D coordinates (<i>u, v</i>) of a texture pixel (or <i>texel</i>) are mapped to the world coordinates (<i>x, y, z</i>) of a point on a face by:
+<p>       <i>u</i> = <i>tv</i><sub>0,0</sub> . <i>x</i> + <i>tv</i><sub>0,1</sub> . <i>y</i> + <i>tv</i><sub>0,2</sub> . <i>z</i> + <i>tv</i><sub>0,3</sub>
+<p>       <i>v</i> = <i>tv</i><sub>1,0</sub> . <i>x</i> + <i>tv</i><sub>1,1</sub> . <i>y</i> + <i>tv</i><sub>1,2</sub> . <i>z</i> + <i>tv</i><sub>1,3</sub>
+
+<p>where <i>tv</i><sub>A,B</sub> is <code>textureVecs[A][B]</code>.
+
+<p>The <code>lightmapVecs</code> float array performs a similar mapping of the lightmap samples of the texture onto the world.
+
+<p>The <code>flags</code> entry contains bitflags which are defined in <i>bspflags.h</i>:
+
+<pre>
+SURF_LIGHT	0x0001		// value will hold the light strength
+SURF_SLICK	0x0002		// effects game physics
+SURF_SKY	0x0004		// don't draw, but add to skybox
+SURF_WARP	0x0008		// turbulent water warp
+SURF_TRANS	0x0010          // surface is transparent
+SURF_WET	0x0020		// the surface is wet
+SURF_FLOWING	0x0040		// scroll towards angle
+SURF_NODRAW	0x0080		// don't bother referencing the texture
+SURF_HINT	0x0100		// make a primary bsp splitter
+SURF_SKIP	0x0200		// completely ignore, allowing non-closed brushes
+SURF_NOLIGHT	0x0400		// Don't calculate light on this surface
+SURF_BUMPLIGHT	0x0800		// calculate three lightmaps for the surface for bumpmapping
+SURF_NOSHADOWS	0x1000		// Don't receive shadows
+SURF_NODECALS	0x2000		// Don't receive decals
+SURF_NOCHOP	0x4000		// Don't subdivide patches on this surface 
+SURF_HITBOX	0x8000		// surface is part of a hitbox
+</pre>
+
+<p>The flags seem to be derived from the texture's .vmt file contents, and specify special properties of that texture.
+
+<p>Finally the <code>texdata</code> entry is an index into the Texdata array, and specifies the actual texture.
+
+<p>The index of a Texinfo (referenced from a face or brushside) may be given as -1; this indicates that no texture information is associated with this face. This occurs on compiling brush faces given the SKIP, CLIP, or INVISIBLE type textures in the editor.
+
+<p>The texdata array (lump 2) consists of the structures:
+
+<pre>
+struct dtexdata_t
+{
+	Vector            reflectivity;           // RGB reflectivity 	
+	int               nameStringTableID;      // index into TexdataStringTable
+	int               width, height;         	// source image
+	int               view_width, view_height;     
+};
+</pre>
+
+<p>The <code>reflectivity</code> vector corresponds to the RGB components of the reflectivity of the texture, as derived from the material's .vtf file. This is probably used in radiosity (lighting) calculations of what light bounces from the texture's surface. The <code>nameStringTableID</code> is an index into the TexdataStringTable array (below). The other members relate to the texture's source image.
+
+<p>The TexdataStringTable (lump 44) is an array of integers which are offsets into the TexdataStringData (lump 43). The TexdataStringData lump consists of concatenated null-terminated strings giving the texture name.
+
+<p>There can be a maximum of 12288 texinfos in a map (MAX_MAP_TEXINFO). There is a limit of 2048 texdatas in the array (MAX_MAP_TEXDATA) and up to 256000 bytes in the TexdataStringData data block (MAX_MAP_TEXDATA_STRING_DATA). Texture name strings are limited to 128 characters (TEXTURE_NAME_LENGTH).
+
+<a name="model"></a>
+<h3>Model Lump</h3>
+
+<p>A Model, in the terminology of the BSP file format, is a collection of brushes and faces, often called a "bmodel". It should not be confused with the prop models used in Hammer, which are usually called "studiomodels" in the SDK source. 
+
+<p>The model lump (14) consists of an array of 24-byte <code>dmodel_t</code> structures:
+
+<pre>
+struct dmodel_t
+{
+	Vector      mins, maxs;             // bounding box
+	Vector      origin;                 // for sounds or lights
+	int         headnode;               // index into node array
+	int         firstface, numfaces;    // index into face array
+};
+</pre>
+
+<p><code>Mins</code> and <code>maxs</code> are the bounding points of the model. <code>Origin</code> is the coordinates of the model in the world, if set. <code>Headnode</code> is the index of the top node in the node array of the BSP tree which describes this model. <code>Firstface</code> and <code>numfaces</code> index into the face array and give the faces which make up this model.
+
+<p>The first model in the array (Model 0) is always "worldspawn", the overall geometry of the whole map excluding entities (but including func_detail brushes). The subsequent models in the array are associated with brush entities, and referenced from the entity lump.
+
+<p>There is a limit of 1024 models in a map (MAX_MAP_MODELS), including the worldspawn model zero. 
+
+<a name="visibility"></a>
+<h3>Visibity Lump</h3>
+
+<p>The visibility lump (4) is in a somewhat different format to the previously mentioned lumps. To understand it, some discussion of how the Source engine's visibility system works in necessary. 
+
+<p>As mentioned in the "Node and Leaf Lumps" section above, every point in the map falls into exactly one convex volume called a leaf. All leaves that are on the inside of the map (not touching the void), and that are not covered by a solid brush can potentially have the player's viewpoint inside it during normal gameplay. Each of these enterable leaves (also called <i>visleaves</i>) gets assigned a cluster number. In HL2 BSP files, each enterable leaf corresponds to just one cluster.
+
+<p>(The terminology is slightly confusing here. According to the "Quake 2 BSP File Format" article, in the Q2 engine there could be multiple adjacent leaves in each cluster - thus the cluster is so called because it is a cluster of leaves. As I understand it, it seems from the HL2 SDK source that this situation may also occur during the compilation of HL2 maps; however, after the VVIS compile process is finished these adjacent leaves (and their parent nodes) are merged into a single leaf. In all finished HL2 maps I have examined, it seems there is only ever one leaf per cluster. Therefore, in HL2 BSP files the distinction between clusters and enterable leaves (visleaves) is not meaningful.)
+
+<p>Each cluster, then, is a volume in the map that the player can potentially be in. To render the map quickly, the game engine draws the geometry of only those clusters which are visible from the current cluster. Clusters which are completely occluded from view from the player's cluster need not be drawn. Calculating cluster-to-cluster visibility is the responsibility of the VVIS compile tool, and the resulting data is stored in the Visibility lump.
+
+<p>Once the engine knows a cluster is visible, the leaf data references all faces present in that cluster, allowing the contents of the cluster to be rendered.
+
+<p>The data is stored as an array of bit-vectors; for each cluster, a list of which other clusters are visible from it are stored as individual bits (1 if visible, 0 if occluded) in an array, with the <i>n</i>th bit position corresponding to the <i>n</i>th cluster. This is known as the cluster's Potentially Visible Set (PVS). Because of the large size of this data,
+the bit vectors are compressed by run-length encoding groups of zero bits in each vector.
+
+<p>There is also a Potentially Audible Set (PAS) array created for each cluster; this marks which clusters can hear sounds occurring in other clusters. The PAS seems to be created by merging the PVS bits of all clusters in current cluster's PVS.
+
+<p>The Visibilty lump is defined as: 
+
+<pre>
+struct dvis_t
+{
+	int         numclusters;	
+	int         byteofs[numclusters][2]
+};
+</pre>
+
+<p>The first integer is the number of clusters in the map. It is followed by an array of integers giving the byte offset from the start of the lump to the start of the PVS bit array for each cluster, followed by the offset to the PAS array. Immediately following the array are the compressed bit vectors.
+
+<p>The decoding of the run-length compression works as follows: To find the PVS of a given cluster, start at the byte given by the offset in the <code>byteofs[]</code> array. If the current byte in the PVS buffer is zero, the following byte multiplied by 8 is the number of clusters to skip that are not visible. If the current byte is non-zero, the bits that are set correspond to clusters that are visible from this cluster. Continue until the number of clusters in the map is reached.
+
+<p>Example C code to decompress the bit vectors can be found in the "Quake 2 BSP File Format" document.
+
+<p>The maximum size of the Visibility lump is 0x1000000 bytes (MAX_MAP_VISIBILITY); that is, 16 Mb. 
+
+<a name="entity"></a>
+<h3>Entity Lump</h3>
+
+<p>The entity lump (0) is an ASCII text buffer, and stores the entity data in a format very similar to that used in the pre-compiled vmf files. Its general form is as follows:
+
+<pre>
+{
+"world_maxs" "480 480 480"
+"world_mins" "-480 -480 -224"
+"maxpropscreenwidth" "-1"
+"skyname" "sky_wasteland02"
+"classname" "worldspawn"
+}
+{
+"origin" "-413.793 -384 -192"
+"angles" "0 0 0"
+"classname" "info_player_start"
+}
+{
+"model" "*1"
+"targetname" "secret_1"
+"origin" "424 -1536 1800"
+"Solidity" "1"
+"StartDisabled" "0"
+"InputFilter" "0"
+"disablereceiveshadows" "0"
+"disableshadows" "0"
+"rendermode" "0"
+"renderfx" "0"
+"rendercolor" "255 255 255"
+"renderamt" "255"
+"classname" "func_brush"
+}
+</pre>
+
+<p>Entities are defined between opening and closing braces ("{" and "}") and list on each line a pair of key/value properties inside quotation marks. The first entity is always "worldspawn". The "classname" property gives the entity type, and the "targetname" property gives the entity's name as defined in Hammer (if it has one). The "model" property is slightly special if it starts with an asterisk (*), the following number is an index into the model array (see above) which corresponds to the brushes associated with that entity. Otherwise, the value contains the name of a prop model. Other key/value pairs correspond to the properties of the entity as set in Hammer.
+
+<p>Note that func_detail, env_cubemap, info_overlay and prop_static entities are striped out of the entity data by the compile process, and stored elsewhere in the bsp file.
+
+<p>The entity lump can be a maximum of 256 kbytes long (MAX_MAP_ENTSTRING) and contain up to 4096 entities (MAX_MAP_ENTITIES). Each key string can be a maximum of 32 characters (MAX_KEY) and the value strings up to 1024 characters (MAX_VALUE).
+
+<a name="gamelump"></a>
+<h3>Game Lump</h3>
+
+<p>The Game lump (35) seems to be intended to be used for map data that is specific to a particular game using the Source engine, so that the file format can be extended without altering the previously defined format. It starts with a game lump header:
+
+<pre>
+struct dgamelumpheader_t
+{
+	int lumpCount;                      // number of game lumps
+	dgamelump_t gamelump[lumpCount];    
+};
+</pre>
+
+<p>where the gamelump directory array is defined by:
+
+<pre>
+struct dgamelump_t
+{
+	int   id;                     // gamelump ID
+	unsigned short flags;         // flags
+	unsigned short version;       // gamelump version
+	int   fileofs;                // offset to this gamelump
+	int   filelen;                // length
+};
+</pre>
+
+<p>The gamelump is identified by the 4-byte <code>id</code> member, which defines what data is stored in it, and the byte position of the data (from the start of the file) and its length is given in <code>fileofs</code> and <code>filelen</code>.
+
+<p>Of interest is the gamelump which is used to store prop_static entities, which uses the gamelump ID of 'sprp' ASCII (1936749168 decimal). Unlike most other entities, prop_statics are not stored in the entity lump. The gamelump formats used in HL2 are defined in the <i>public/gamebspfile.h</i> header file.
+
+<p>The first element of the prop_static game lump is the dictionary; this is an integer count followed by the list of model (prop) names used in the map:
+
+<pre>
+struct StaticPropDictLump_t
+{
+	int   dictEntries;
+	char  name[dictEntries];            // model name
+};
+</pre>
+
+<p>Each <code>name</code> entry is 128 characters long, null-padded to this length.
+
+<p>Following the dictionary is the leaf array:
+
+<pre>
+struct StaticPropLeafLump_t
+{
+	int leafEntries;
+	unsigned short    leaf[leafEntries];
+};
+</pre>
+
+<p>Presumably, this array is used to index into the leaf lump to locate the leaves that each prop static is located in. Note that a prop static may span several leaves.
+
+<p>Next, an integer giving the number of <code>StaticPropLump_t</code> entries, followed by that many structures themselves:
+
+<pre>
+struct StaticPropLump_t
+{
+	Vector            Origin;           // origin
+	QAngle            Angles;           // orientation (pitch roll yaw)
+	unsigned short    PropType;         // index into model name dictionary
+	unsigned short    FirstLeaf;        // index into leaf array
+	unsigned short    LeafCount;
+	unsigned char     Solid;            // solidity type
+	unsigned char     Flags;            
+	int               Skin;             // model skin numbers
+	float       FadeMinDist;
+	float       FadeMaxDist;
+
+	Vector      LightingOrigin;         // for lighting 
+	float       ForcedFadeScale;        // only present in version 5 gamelump
+};
+
+</pre>
+
+<p>The coordinates of the prop are given by the <code>Origin</code> member; its orientation (pitch, roll, yaw) is given by the <code>Angles</code> entry, which is a 3-float vector. The <code>PropType</code> element is an index into the
+dictionary of prop model names, given above. The other elements correspond to the location of the prop in the BSP structure of the map, its lighting, and other entity properties as set in Hammer. The last element (<code>ForcedFadeScale</code>)
+is only present in the prop_static structure if the gamelump is specified as version 5 (<code>dgamelump_t.version</code> above); both version 4 and version 5 static prop gamelumps are used in official HL2 maps.
+
+<p>Other gamelumps used in HL2 BSP files are the detail prop gamelump (ID is 'dprp'), and the detail prop lighting
+lump (ID: 'dplt'). These are used for the prop_detail entities (grass tufts, etc.) automatically emitted by certain textures when placed on displacement surfaces. In version 20 BSP files there is also another gamelump (ID: 'dplh') which is probably related to HDR lighting of detail props.
+
+<p>There does not seem to be a specified limit on the size of the game lump.
+
+<a name="dispinfo"></a>
+<h3>Dispinfo, DispVerts and DispTris Lumps</h3>
+
+<p>Displacement surfaces are the most complex parts of a BSP file, and I will cover only part of their format here. Their data is split over a number of different data lumps in the file, but the fundamental reference to them is through the dispinfo lump (26). Dispinfos are referenced from the face, original face, and brushside arrays.
+
+<pre>
+struct ddispinfo_t
+{
+	Vector      startPosition;          // start position used for orientation
+	int         DispVertStart;          // Index into LUMP_DISP_VERTS.
+	int         DispTriStart;           // Index into LUMP_DISP_TRIS.
+	int         power;                 // power - indicates size of surface (2^power + 1)
+	int         minTess;                // minimum tesselation allowed
+	float       smoothingAngle;         // lighting smoothing angle
+	int         contents;               // surface contents
+	unsigned short    MapFace;          // Which map face this displacement comes from.
+	int         LightmapAlphaStart;     // Index into ddisplightmapalpha.
+	int         LightmapSamplePositionStart;  	// Index into LUMP_DISP_LIGHTMAP_SAMPLE_POSITIONS.
+	CDispNeighbor           EdgeNeighbors[4]; 	// Indexed by NEIGHBOREDGE_ defines.
+	CDispCornerNeighbors    CornerNeighbors[4];     // Indexed by CORNER_ defines.
+	unsigned long	AllowedVerts[ALLOWEDVERTS_SIZE];    // active verticies
+};
+</pre>
+
+<p>The structure is 176 bytes long. The <code>startPosition</code> element is the coordinates of the first corner of the displacement. <code>DispVertStart</code> and <code>DispTriStart</code> are indices into the DispVerts and DispTris lumps. The <code>power</code> entry gives the number of subdivisions in the displacement surface - allowed values are 2, 3 and 4, and these correspond to 4, 8 and 16 subdivisions on each side of the displacement surface. The structure also references any
+neighbouring displacements on the sides or the corners of this displacement through the <code>EdgeNeighbors</code> and <code>CornerNeighbors</code> members. There are complex rules governing the order that these neighbour displacements are given; see the comments in <i>bspfile.h </i>for more. The <code>MapFace</code> value is an index into the face array and is face that was turned into a displacement surface. This face is used to set the texture and overall physical location and boundaries of the displacement.
+
+<p>The DispVerts lump (33) contains the vertex data of the displacements. It is given by:
+
+<pre>
+struct dDispVert
+{
+	Vector      vec;        // Vector field defining displacement volume.
+	float       dist;       // Displacement distances.
+	float       alpha;      // "per vertex" alpha values.
+};
+</pre>
+
+<p>where <code>vec</code> is the normalized vector of the offset of each displacement vertex from its original (flat) position; <code>dist</code> is the distance the offset has taken place; and <code>alpha</code> is the alpha-blending of
+the texture at that vertex.
+
+<p>A displacement of power <i>p</i> references (2^<i>p</i>+1)^2 dispverts in the array, starting from the <code>DispVertStart</code> index.
+
+<p>The DispTris lump (48) contains "triangle tags" or flags related to the properties of a particular triangle in the displacement mesh:
+
+<pre>
+struct dDispTri
+{
+	unsigned short Tags;          // Displacement triangle tags.
+};
+</pre>
+
+<p>where the flags are:
+
+<pre>
+DISPTRI_TAG_SURFACE           1
+DISPTRI_TAG_WALKABLE          2
+DISPTRI_TAG_BUILDABLE         4
+DISPTRI_FLAG_SURFPROP1        8
+DISPTRI_FLAG_SURFPROP2        16
+</pre>
+
+<p>There are 2x(2^<i>p</i>)^2 DispTri entries for a displacement of power <i>p</i>. They are presumably used to indicate properties for each triangle of the displacement such as whether the surface is walkable at that point (not too steep to climb).
+
+<p>There are a limit of 2048 Dispinfos per map, and the limits of DispVerts and DispTris are such that all 2048 displacements could be of power 4 (maximally subdivided).
+
+<p>Other displacement-related data are the DispLightmapAlphas (32) and DispLightmapSamplePos (34) lumps, which seem to relate to lighting of each displacement surface.
+
+<a name="pakfile"></a>
+<h3>Pakfile Lump</h3>
+
+<p>The Pakfile lump (40) is a special lump that can contains multiple files which are embedded into the bsp file. Usually, they contain special texture (.vtf) and material (.vmt) files which are used to store the reflection maps from env_cubemap entities in the map; these files are built and placed in the Pakfile lump when the "buildcubemaps" console command is
+executed. The Pakfile can optionally contain such things as custom textures and prop models used in the map, and are placed into the bsp file by using the BSPZIP program (or alternate programs such as <a href="pakrat.html">Pakrat</a>). These files are integrated into the game engine's filesystem
+and will be loaded preferentially before externally located files are used.
+
+<p>The format of the Pakfile lump is identical to that used by the Zip compression utility when no compression is specified (i.e., the individual files are stored in uncompressed format). If the Pakfile lump is extracted and written to a file, it can therefore be opened with WinZip and similar programs. 
+
+<p>The header <i>public/zip_uncompressed.h</i> defines the structures present in the Pakfile lump. The last element in the lump is a <code>ZIP_EndOfCentralDirRecord</code> structure. This points to an array of <code>ZIP_FileHeader</code> structures immediately preceeding it, one for each file present in the Pak. Each of these headers then point to <code>ZIP_LocalFileHeader</code> structures that are followed by that file's data.
+
+<p>The Pakfile lump is usually the last element of the bsp file.
+
+<a name="cubemap"></a>
+<h3>Cubemap Lump</h3>
+
+<p>The Cubemap lump (42) contains the location of all env_cubemap entities in the map:
+
+<pre>
+struct dcubemapsample_t
+{
+	int               origin[3];        // position of light snapped to the nearest integer
+	unsigned char     size;             // resolution of cubemap, 0 - default
+};
+</pre>
+
+<p>The <code>origin</code> member contains integer x,y,z coordinates of the cubemap, and the <code>size</code> member is resolution of the cubemap, specified as 2^(<i>size</i>-1) pixels square. If set as 0, the default size of 6 (32x32 pixels) is used.  There can be a maximum of 1024 (MAX_MAP_CUBEMAPSAMPLES) cubemaps in a file.
+
+<p>When the "buildcubemaps" console command is performed, six snapshots of the map (one for each direction) are taken at the location of each env_cubemap entity. These snapshots are stored in a multi-frame texture (vtf) file, which is added to the Pakfile lump (see above). The textures are named <code>cX_Y_Z.vtf</code>, where (X,Y,Z) are the (integer) coordinates of the corresponding cubemap.
+
+<p>Faces containing materials that are environment mapped (e.g. shiny textures) reference their assigned cubemap through their material name. A face with a material named (e.g.) <code>walls/shiny.vmt</code> is altered (new Texinfo & Texdata entries are created) to refer to a renamed material <code>maps/<i>mapname</i>/walls/shiny_X_Y_Z.vmt</code>, where (X,Y,Z) are the cubemap coordinates as before. This .vmt file is also stored in the Pakfile, and references the cubemap .vtf file through its <code>$envmap</code> property.
+
+<p>Version 20 files contain extra <code>cX_Y_Z.hdr.vtf</code> files in the Pakfile lump, containing HDR texture files in RGBA16161616F (16-bit per channel) format.
+
+<a name="overlay"></a>
+<h3>Overlay Lump</h3>
+
+<p>Unlike the simpler decals (infodecal entities), info_overlays are removed from the entity lump and stored separately in the Overlay lump (45). The structure is reflects the properties of the entity in Hammer almost exactly:
+
+<pre>
+struct doverlay_t
+{
+	int         Id;
+	short       TexInfo;
+	unsigned short    FaceCountAndRenderOrder;
+	int         Ofaces[OVERLAY_BSP_FACE_COUNT];
+	float       U[2];
+	float       V[2];
+	Vector      UVPoints[4];
+	Vector      Origin;
+	Vector      BasisNormal;
+};
+</pre>
+
+<p>The <code>FaceCountAndRenderOrder</code> member is split into two parts; the lower 14 bits are the number of faces that the overlay appears on, with the top 2 bits being the render order of the overlay (for overlapping decals). The <code>Ofaces</code> array, which is 64 elements in size (OVERLAY_BSP_FACE_COUNT) are the indices into the face array indicating which map faces the overlay should be displayed on. The other
+elements set the texture, scale, and orientation of the overlay decal. There can be a maximum of 512 overlays per file (MAX_MAP_OVERLAYS).
+
+<a name="lighting"></a>
+<h3>Lighting Lump</h3>
+
+<p>The lighting lump (8) is used to store the static lightmap samples of map faces. Each lightmap sample is a colour tint that multiplies the colours of the underlying texture pixels, to produce lighting of varying intensity. These lightmaps are created during the VRAD phase of map compilation and are referenced from the <code>dface_t</code> structure. The current lighting lump version is 1.
+
+<p>Each <code>dface_t</code> may have a up to four lightstyles defined in its <code>styles[]</code> array (which contains 255 to represent no lightstyle). The number of luxels in each direction of the face is given by the two <code>LightmapTextureSizeInLuxels[]</code> members (plus 1), and the total number of luxels per face is thus (<code>LightmapTextureSizeInLuxels[0]</code> + 1) * (<code>LightmapTextureSizeInLuxels[1]</code>+1).
+
+<p>Each face gives a byte offset into the lighting lump in its <code>lightofs</code> member (if no lighting information is used for this face e.g. faces with skybox, nodraw and invisible textures, <code>lightofs</code> is -1.) There are (<i>number of lightstyles</i>)*(<i>number of luxels</i>) lightmap samples for each face, where each sample is a 4-byte ColorRGBExp32 structure:
+
+<pre>
+struct ColorRGBExp32
+{
+	byte r, g, b;
+	signed char exponent;
+};
+</pre>
+
+<p>Standard RGB format can be obtained from this by multiplying each colour component by 2^(<i>exponent</i>). For faces with bumpmapped textures, there are four times the usual number of lightmap samples, presumably containing samples used to compute the bumpmapping.
+
+<p>Immediately preceeding the <code>lightofs</code>-referenced sample group, there are single samples containing the average lighting on the face, one for each lightstyle, in reverse order from that given in the <code>styles[]</code> array.
+
+<p>Version 20 BSP files contain a second, identically sized lighting lump in lump 53. This is presumed to store more accurate (higher-precision) HDR data for each lightmap sample. The format is currently unknown, but is also 32 bits per sample.
+
+<p>The maximum size of the lighting lump is 0x1000000 bytes, i.e. 16 Mb (MAX_MAP_LIGHTING).
+
+<a name="other"></a>
+<h3>Other Lumps</h3>
+
+<p>There are nineteen other lumps defined in the HL2 BSP file format that have not yet been covered. These lumps were not needed for the creation of a decompiler, and so I have not researched them or their formats. There are also four lumps only present in version 20 BSP files. I will give general information and likely guesses to the content of these lumps. 
+
+<p>The Occlusion lump (9) contains data on func_occluder entities which are switchable entities that block the drawing of visible entities behind them. 
+
+<p>The Worldlights lump (15) contains information on each static light entity in the world, and seems to be used to provide semi-dynamic lighting for moving entities.
+
+<p>The Areas lump (20) references the Areaportals lump (21) and is used with func_areaportal and func_areaportalwindow entities to define sections of the map that can be switched to render or not render. 
+
+<p>The Portals (22), Clusters (23), PortalVerts (24), ClusterPortals (25), and ClipPortalVerts (41) lumps are used by the VVIS phase of the compile to ascertain which clusters can see which other clusters. A cluster is a player-enterable leaf volume in the map (see above). A "portal" is a polygon boundary between a cluster or leaf and an adjacent cluster or leaf. Most of this information is also used by the VRAD program to calculate static lighting, and then is removed from the bsp file.
+
+<p>Lumps 29 (PhysCollide) and 49 (PhysCollideSurface) seem to be related to the physical simulation of entity collisions in the game engine.
+
+<p>The VertNormal (30) and VertNormalIndices (31) lumps may be related to smoothing of lightmaps on faces. 
+
+<p>The FaceMacroTextureInfo lump (47) is a short array containing the same number of members as the number of faces in the map. If the entry for a face contains anything other than -1 (0xFFFF), it is an index of a texture name in the TexDataStringTable. In VRAD, the corresponding texture is mapped onto the world extents, and used to modulate the lightmaps of that face. There is also a base macro texture (located at <code>materials/macro/<i>mapname</i>/base.vtf</code>) that is applied to all faces if found. Only maps in VTMB seem to make any use of macro textures.
+
+<p>LeafWaterData (36) and LeafMinDistToWater (46) lumps may be used to determine player position with respect to water volumes.
+
+<p>The Primitives (37), PrimVerts (38) and PrimIndices (39) lumps are used in reference to "non-polygonal primitives". They are also sometimes called "waterstrips", "waterverts" and "waterindices" in the SDK Source, since they were originally only used to subdivide water meshes. They are now used to prevent the appearance of cracks between adjacent faces, if the face edges contain a "T-junction" (a vertex collinearly between two other vertices). The PrimIndices lump defines a set of triangles between face vertices, that tessellate the face. They are referenced from the Primatives lump, which is in turn referenced by the face lump data. Current maps do not seem to use the PrimVerts lump at all.
+(<a href="http://www.chatbear.com/board.plm?a=viewthread&b=4991&t=137,1118051039,3296&s=0&id=862840#3">Ref.</a>)
+
+<p>Version 20 files containing HDR lighting information have four extra lumps, the contents of which are currently uncertain. Lump 53 is always the same size as the standard lighting lump (8) and probably contains higher-precision data for each lightmap sample. Lump 54 is the same size as the worldlight lump (15) and presumably contains HDR-related data for each light entity. Lumps 55 and 56 both seem to be 24-byte records (possibly CompressedLightCube structures) with the same count as the number of leaves in the map. They are probably thus HDR-related per-leaf lighting information.
+<hr>
+<a href="index.html">Back to Index</a>
+<hr>
+</body>
+</html>

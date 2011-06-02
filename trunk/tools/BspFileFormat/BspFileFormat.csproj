@@ -1,0 +1,126 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{AE0150A6-6DCB-4F21-8656-F0C19326590E}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>BspFileFormat</RootNamespace>
+    <AssemblyName>BspFileFormat</AssemblyName>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BspCollisionConvexBrush.cs" />
+    <Compile Include="BspCollisionFaceSoup.cs" />
+    <Compile Include="BspCollisionObject.cs" />
+    <Compile Include="BspDocument.cs" />
+    <Compile Include="BspGeometry.cs" />
+    <Compile Include="BspGeometryFace.cs" />
+    <Compile Include="BspGeometryVertex.cs" />
+    <Compile Include="BspTexture.cs" />
+    <Compile Include="BspTextureReference.cs" />
+    <Compile Include="BspTreeElement.cs" />
+    <Compile Include="BspTreeLeaf.cs" />
+    <Compile Include="BspTreeNode.cs" />
+    <Compile Include="HL2\cluster_t.cs" />
+    <Compile Include="HL2\dentry_t.cs" />
+    <Compile Include="HL2\dleaf_t.cs" />
+    <Compile Include="HL2\dnode_t.cs" />
+    <Compile Include="HL2\dtexdata_t.cs" />
+    <Compile Include="HL2\edge_t.cs" />
+    <Compile Include="HL2\header_t.cs" />
+    <Compile Include="HL2\HL2Reader.cs" />
+    <Compile Include="HL2\HL2Reader17.cs" />
+    <Compile Include="HL2\HL2Reader19.cs" />
+    <Compile Include="HL2\HL2Reader20.cs" />
+    <Compile Include="HL2\plane_t.cs" />
+    <Compile Include="HL2\texinfo_t.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="BspMath\bboxshort_t.cs" />
+    <Compile Include="Q1HL1\boundbox_t.cs" />
+    <Compile Include="Q1HL1\clipnode_t.cs" />
+    <Compile Include="Q1HL1\dentry_t.cs" />
+    <Compile Include="Q1HL1\dleaf_t.cs" />
+    <Compile Include="Q1HL1\edge_t.cs" />
+    <Compile Include="Q1HL1\face_t.cs" />
+    <Compile Include="HL2\face_t.cs" />
+    <Compile Include="Q1HL1\header_t.cs" />
+    <Compile Include="Q1HL1\HL1Reader.cs" />
+    <Compile Include="Q1HL1\mipheader_t.cs" />
+    <Compile Include="Q1HL1\miptex_t.cs" />
+    <Compile Include="Q1HL1\model_t.cs" />
+    <Compile Include="Q1HL1\node_t.cs" />
+    <Compile Include="Q1HL1\plane_t.cs" />
+    <Compile Include="Q1HL1\q1palette.cs" />
+    <Compile Include="Q1HL1\Quake1Reader.cs" />
+    <Compile Include="Q1HL1\QuakeReader.cs" />
+    <Compile Include="Q1HL1\surface_t.cs" />
+    <Compile Include="Q2\cluster_t.cs" />
+    <Compile Include="Q2\dentry_t.cs" />
+    <Compile Include="Q2\edge_t.cs" />
+    <Compile Include="Q2\face_t.cs" />
+    <Compile Include="Q2\header_t.cs" />
+    <Compile Include="Q2\leaf_t.cs" />
+    <Compile Include="Q2\node_t.cs" />
+    <Compile Include="Q2\plane_t.cs" />
+    <Compile Include="Q2\Quake2Reader.cs" />
+    <Compile Include="Q2\texinfo_t.cs" />
+    <Compile Include="Q3\brush_t.cs" />
+    <Compile Include="Q3\cluster_t.cs" />
+    <Compile Include="Q3\dentry_t.cs" />
+    <Compile Include="Q3\face_t.cs" />
+    <Compile Include="Q3\header_t.cs" />
+    <Compile Include="Q3\leaf_t.cs" />
+    <Compile Include="Q3\node_t.cs" />
+    <Compile Include="Q3\plane_t.cs" />
+    <Compile Include="Q3\Quake3Reader.cs" />
+    <Compile Include="BspEmbeddedTexture.cs" />
+    <Compile Include="Q3\QuakeLiveReader.cs" />
+    <Compile Include="Q3\texture_t.cs" />
+    <Compile Include="Q3\vertex_t.cs" />
+    <Compile Include="Utils\FaceToLeafKey.cs" />
+    <Compile Include="Utils\FaceToLeafMap.cs" />
+    <Compile Include="Utils\IBspReader.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ReaderUtils\ReaderUtils.csproj">
+      <Project>{0BCB3995-A250-4A3A-AFDB-DDC01FB20A36}</Project>
+      <Name>ReaderUtils</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

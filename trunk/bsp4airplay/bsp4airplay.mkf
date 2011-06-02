@@ -1,0 +1,44 @@
+includepaths
+{
+	"source"
+}
+
+files
+{
+	("source")
+	b4aColliderList.cpp
+	b4aColliderList.h
+	b4aCollisionMeshSoup.cpp
+	b4aCollisionMeshSoup.h
+	b4aCollisionConvexBrush.cpp
+	b4aCollisionConvexBrush.h
+	b4aEntity.cpp
+	b4aEntity.h
+	b4aLeaf.cpp
+	b4aLeaf.h
+	b4aLevel.cpp
+	b4aLevel.h
+	b4aLevelMaterial.cpp
+	b4aLevelMaterial.h
+	b4aLevelVB.cpp
+	b4aLevelVB.h
+	b4aLevelVBSubcluster.cpp
+	b4aLevelVBSubcluster.h
+	b4aNode.cpp
+	b4aNode.h
+	b4aPlane.h
+	b4aSolidGeometry.cpp
+	b4aSolidGeometry.h
+	Bsp4Airplay.cpp
+	Bsp4Airplay.h
+	Ib4aCollider.cpp
+	Ib4aCollider.h
+	Ib4aProjection.cpp
+	Ib4aProjection.h
+}
+subprojects
+{
+	iwgraphics
+	iwgx
+	iwutil
+}

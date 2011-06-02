@@ -1,0 +1,78 @@
+   
+================================================================
+Tytu³                 : Holy blood
+Nazwa paku            : q3shw18
+Autor                 : ShadoW
+kontakt               :	shw86@o2.pl
+================================================================
+* info o mapie/czyli co my tu mamy *
+
+Single Player         : nie
+Tournament	      : tak
+Deathmatch            : tak
+Team                  : nie
+Ctf		      : nie	
+================================================================
+* Konstrukcja *
+Programy              : GtkRadiant-1.4, PowerArchiwer, Notatnik, Q3Map2, IrfanView
+
+Czas budowy           : Tak w sumie jakieœ 2 tygodnie,ale zaczo³em j¹ ju¿ daaawno temu
+Bazowane na           : od podstaw
+Brushes               : 3399
+Entities              : 440
+nowe textury          : tylko te z TA
+nowe dŸwiêki          : jak wy¿ej
+nowe modele           : jak wy¿ej
+
+Wyposa¿enie           : RL x 1		YA x 2           
+                      	NG x 1		MH x 1
+                        LG x 1		    
+                        RG x 1          
+                                   
+================================================================
+* Jak to uruchomiæ *
+
+
+Wrzuæ plik do folderu Quake3\missionpack\
+Mapê startuj z konsoli poleceniem "map q3shw18"
+================================================================
+* Inne moje mapki *
+
+QuakeIII :
+
+1)  q3shw1:Ten pierwszy raz
+2)  q3shw2:Za wolno frajerze...         
+3)  q3shw3:Frag-ment
+4)  q3shw4:Katedra
+5)  q3shw5:Dom
+6)  q3shw6:Szko³a
+7)  q3shw7:Wysokie napiêcie
+8)  q3shw8:Gdy nie ma nadziei
+9)  q3shw9:Bez wyjœcia
+10) q3shw10:Czarna wie¿a
+11) q3shw11:Orientuj siê
+12) q3shw12:Pora umieraæ
+13) q3shw13:Miasto
+14) q3shw14:Memento Mori
+15) q3shw15:Wysokie napiêcie II
+16) q3shw16:Dotyk œmierci
+17) q3shw17:Empty words
+
+xx) shw_q3dm17:Q3dm17 conversion by ShadoW
+xx) shw_100b:100 brushy by ShadoW
+================================================================
+* BiG Thx dla: *
+
+- Id software - Za Q. (http://www.idsoftware.com)
+- Ydnar (http://shaderlab.com) za program kompilacyjny
+================================================================
+
+	Mapka zaprojektowana i zbudowana z myœl¹ o 1v1, vq3 (a raczej TA :P). Ta mapka to mój taki ma³y comeback do projektowania map, nie by³o mnie troche widaæ i s³ychac, ale w koñcu przypomnia³em sobie jak to jest zrobic mapkê do q3 :P. W sumie powsta³a poniewa¿ Nailgun to zajefajna broñ i koniecznie chcia³em stworzyæ jak¹ mape z ni¹, lecz nie Ctf-ow¹. Dlatego te¿ powsta³o Holy blood. Tytu³ mo¿e trochê infantylny, ale w koñcu nie to jest tu najwazniejsze. Chocia¿ uwa¿am mape za skoñczon¹ i przetestowan¹, na razie niech bêdzie to beta, mo¿e coœ jeszcze siê zmieni. Dla potencjalnych graczy: pograjcie trochê zanim zaczniecie komentowaæ (i niech to nie bêd¹ 3 szybkie rundki), jeœli chodzi o boty polecam Sarge'a. Ca³ekiem fajnie siê gra w 3 osobowe ffa, a jeszcze lepiej w 4 osoby, w tedy gra jest doœæ szybka i dynamiczna. Ca³y czas zastanawiam siê czy górnwgo YA nie zamieniæ na RA, poniewa¿ jest to czêœæ mapki do której nie tak ³atwo siê dostaæ i nie zagl¹da siê tam tak czêsto. No nic, w ka¿dym razie czekam na opinie, i mam nadziejê, ¿e mapka nie jest najgorsza.
+	
+
+
+    
+                  ShadoW
+
+                      
+

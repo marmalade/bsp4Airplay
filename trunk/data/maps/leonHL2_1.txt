@@ -1,0 +1,76 @@
+===========================================================================
+
+Title                   :LeonHL2_1
+Description             :4 sp-maps with a story that linkes them togetter.
+Release Date            :29 03 2005
+Filename                :LeonHL2_1
+Author                  :Leon Stephan Brinkmann SPY(mapping)
+                         Peter BALTIC.FOREVER (made the gunship and a very big help with placing the levelchange triggers and all other kind of mapping, entity, model, leak, compiling problems)  
+Email                   : leonbrinkmann@emailaccount.com     
+ 
+===========================================================================
+
+* Construction *
+
+Buildtime               : 4 maps together: 3.5 month
+Compile Time            : together about 120 minutes
+Editor                  : Hammer 4.0
+Map Known Bugs     	: 1 weapon floating in air in map4, 1 metal file cabinet and wooden fence in street in map2.
+      
+New Textures?		: no
+New Sounds?		: no  
+Custom Soundtrack?		: no
+Compile Machine         : Valve Hammer 4.0 editor
+ 
+
+===========================================================================
+
+* Play Information *
+
+Game                  : Half Life2
+Type                  : single player only
+Supported Modes	    : no
+Players               : 1
+
+STORY;
+
+You get extracted in the sewers outside a big city that is controlled by the combines, although there are certain parts of the city that are filled with headcrabs and other creatures. You have to find and fight your way trough the sewer, over the railroad track in to the city. Once you're in the city your objective is to find the power plant and destroy it. It sounds easy but you will have to fight for your life before you get there.
+
+leon brinkmann
+
+===========================================================================
+* Installation *                
+                                                 
+
+UNZIP IT IN;
+
+ C:\Program Files\Valve\Steam\SteamApps\your_account_name\half-life 2\hl2\maps
+ 
+ Start Half Life2 and open the console by pressing;
+ ~
+ type in the console;
+ map leonHL2_1
+ enter
+ (the maps are quit big so it could take a little while before they start. and when you have difficulty playing them,((it starts to look more like a slideshow)) because you don't have a very powerful computer than you could try to lower the graphics settings a bit in the menu.
+
+
+
+===========================================================================
+
+===========================================================================
+* Permissions*
+
+All original and composed textures or assets in this level remain property of
+the sources respective owners.
+You MAY distribute this ZIP,PK3 in any not-for-profit electronic format (BBS, Internet,
+CD, etc) as long as you contact me first, and include all files, including this readme, intact in
+the original archive.
+
+===========================================================================
+* Warning - Must Read and Understand Before Use*
+
+The author of this file accepts no responsibility for damage to data, or physical damage
+to hardware, caused by the appropriate or inappropriate use of this file. It is deemed 
+that users who run this file, automatically are considered as having read and understood 
+this liability clause before using the said file.
+===========================================================================

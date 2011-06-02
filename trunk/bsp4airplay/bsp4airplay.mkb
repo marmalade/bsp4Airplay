@@ -1,0 +1,46 @@
+#!/usr/bin/env i3d_make_build.py
+
+option 
+{
+	strict
+	s3e-data-dir="../data" 
+}
+assets
+{
+	(../data-ram/data-gles1)
+	maps/de_dust.group.bin
+	fx.group.bin
+	#maps/sg0503.group.bin
+}
+files
+{
+	[Source]
+	(./source)
+	main.cpp
+
+	#[Data]
+	#(../data/models)
+	#sample.group
+}
+deployments
+{
+	caption="BSP Demo"
+	long-caption="BSP Demo"
+	win32-pref-windowtitle="BSP Demo"
+	assets=Default
+	provider="www_101gr_com"
+	manufacturer="101gr.com"
+	copyright="101gr.com (c) 2010"
+	version="1.0.0"
+	networking=1
+	iphone-appid=com.101gr.BSPDemo
+}
+subprojects
+{
+	derbh
+	iwgraphics
+	iwgx
+	iwutil
+	iwanim
+	bsp4airplay.mkf
+}
